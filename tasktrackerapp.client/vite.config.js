@@ -50,9 +50,29 @@ export default defineConfig({
             '^/weatherforecast': {
                 target,
                 secure: false
+            },
+            "/api": {
+                target,
+                changeOrigin: true,
+                secure: false,
+                ws: true,
+                events: ["open", "message", "error", "close"],
+                configure: (proxy) => {
+                    proxy.on('error', (err) => {
+                        console.log('error', err);
+                    });
+                    proxy.on("proxyReq", (proxyReq, req) => {
+                        proxyReq.setHeader("Connection", "keep-alive"); // ? Prevent disconnections
+                        console.log('Request sent to target:', req.method, req.url);
+                    });
+                    proxy.on('proxyRes', (proxyRes, req) => {
+                        console.log('Response received from target:', proxyRes.statusCode, req.url);
+                    });
+                }
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '64712'),
+        strictPort: true,
         https: {
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),

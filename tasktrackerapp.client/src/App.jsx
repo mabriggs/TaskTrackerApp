@@ -1,51 +1,122 @@
 import { useEffect, useState } from 'react';
+import TaskList  from './components/TaskList';
 import './App.css';
 
 function App() {
-    const [forecasts, setForecasts] = useState();
+    const [taskList, setTaskList] = useState([]);
+    const [editingIndex, setEditingIndex] = useState(-1);
+    const [editingNewTask, setEditingNewTask] = useState(false);
 
     useEffect(() => {
-        populateWeatherData();
+        populateTaskData();
     }, []);
 
-    const contents = forecasts === undefined
-        ? <p><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationreact">https://aka.ms/jspsintegrationreact</a> for more details.</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
+    function convertServerTaskData(data) {
+        return {
+            ...data,
+            dueDate: new Date(data.dueDate)
+        };
+    }
+
+    async function populateTaskData() {
+        const response = await fetch('/api/Task/GetAll');
+        if (response.ok) {
+            console.log("popTaskData", response);
+            const data = await response.json();
+            setTaskList(data.map(convertServerTaskData));
+        } else {
+            console.error('Failed to fetch task data');
+        }
+    }
+
+    async function createTaskData(task) {
+        const response = await fetch('/api/Task/Create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(task)
+        });
+        if (response.ok) {
+            const newTask = await response.json();
+            const convTask = convertServerTaskData(newTask);
+            return convTask;
+        } else {
+            console.error('Failed to save task data');
+        }
+    }
+
+    async function updateTaskData(task) {
+        const response = await fetch('/api/Task/Update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(task)
+        });
+        if (response.ok) {
+            const updatedTask = await response.json();
+            return convertServerTaskData(updatedTask);
+        } else {
+            console.error('Failed to update task data');
+        }
+    }
+
+    function removeTaskFromList(task) {
+        const newTaskList = taskList.filter(t => t !== task);
+        setTaskList(newTaskList);
+    }
 
     return (
         <div>
-            <h1 id="tableLabel">Weather forecast</h1>
-            <p>This component demonstrates fetching data from the server.</p>
-            {contents}
+            <button
+                onClick={() => {
+                    const task = {
+                        id: 0,
+                        name: "",
+                        status: "NotStarted",
+                        dueDate: new Date()
+                    };
+                    setTaskList(taskList.concat(task));
+                    setEditingIndex(taskList.length); // no -1, accounting for new task
+                    setEditingNewTask(true);
+                }}
+                disabled={editingIndex >= 0}
+            >Add</button>
+
+            <TaskList tasks={taskList}
+                onUpdateTask={(updatedTask, index) => {
+                    const getTaskFunc = editingNewTask ? createTaskData : updateTaskData;
+                    
+                    getTaskFunc(updatedTask)
+                        .then(resultTask => {
+                            setTaskList(taskList.map((task, i) => {
+                                if (i === index) return resultTask
+                                else return task;
+                            }));
+                            setEditingNewTask(false);
+                        });
+                }}
+                onDeleteTask={task => {
+                    removeTaskFromList(task);
+                    setEditingNewTask(false);
+
+                    // todo: call server
+
+                }}
+                onCancelTask={(task) => {
+                    setEditingIndex(-1);
+                    if (editingNewTask) {
+                        removeTaskFromList(task);
+                        setEditingNewTask(false);
+                    }
+                }}
+                editingIndex={editingIndex}
+                setEditingIndex={setEditingIndex}
+            />
         </div>
     );
     
-    async function populateWeatherData() {
-        const response = await fetch('weatherforecast');
-        if (response.ok) {
-            const data = await response.json();
-            setForecasts(data);
-        }
-    }
 }
 
 export default App;
