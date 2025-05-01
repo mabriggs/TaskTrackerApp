@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TaskTrackerApp.Server;
+using TaskTrackerApp.Server.Data;
 using TaskTrackerApp.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,7 +20,9 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<TaskManager>();
+builder.Services.AddDbContext<AppDbContext>();
+//builder.Services.AddSingleton<ITaskManager, TaskManagerMock>();
+builder.Services.AddScoped<ITaskManager, TaskManagerDb>();
 
 
 

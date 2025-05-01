@@ -2,14 +2,14 @@
 
 namespace TaskTrackerApp.Server.Services
 {
-    public class TaskManager
+    public class TaskManagerMock : ITaskManager
     {
         private int _lastId;
 
         private readonly List<TaskModel> _taskList = [];
 
 
-        public TaskManager()
+        public TaskManagerMock()
         {
             // Initialize with some sample tasks
             _taskList.Add(new TaskModel { Id = 1, Name = "Task 1", Status = Models.TaskStatus.NotStarted, DueDate = DateTime.Now.AddDays(1) });

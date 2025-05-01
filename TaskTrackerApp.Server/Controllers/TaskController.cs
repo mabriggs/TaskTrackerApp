@@ -6,7 +6,7 @@ namespace TaskTrackerApp.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TaskController(TaskManager taskManager) : Controller
+    public class TaskController(ITaskManager taskManager) : Controller
     {
         [HttpPost("Create")]
         public TaskModel CreateTask(TaskModel task)

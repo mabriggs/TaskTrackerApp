@@ -34,11 +34,12 @@ function EditingTaskEntry({
     onCancel}) {
 
     function handleSubmit(formData) {
+        const rawDate = new Date(formData.get('DueDate'));
         const updatedTask = {
             id: task.id,
             name: formData.get('Name'),
             status: formData.get('Status'),
-            dueDate: formData.get('DueDate')
+            dueDate: new Date(Date.UTC(rawDate.getFullYear(), rawDate.getMonth(), rawDate.getDate()))
         };
         // Call the function to update the task in the parent component
         onSaveTask(updatedTask);
