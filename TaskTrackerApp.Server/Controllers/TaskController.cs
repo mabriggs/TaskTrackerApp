@@ -36,11 +36,11 @@ namespace TaskTrackerApp.Server.Controllers
             return task;
         }
 
-        [HttpPost("Delete")]
-        public bool DeleteTask(int id)
+        [HttpPut("Delete")]
+        public IActionResult DeleteTask(int id)
         {
             var result = taskManager.DeleteTask(id);
-            return result;
+            return Ok(result);
         }
     }
 }

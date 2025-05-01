@@ -62,6 +62,16 @@ function App() {
         }
     }
 
+    async function deleteTaskData(task) {
+        const response = await fetch(`/api/Task/Delete?id=${task.id}`, {
+            method: "PUT"
+        });
+        if (!response.ok) {
+            // todo: also check response result
+            console.error('Failed to delete task data');
+        }
+    }
+
     function removeTaskFromList(task) {
         const newTaskList = taskList.filter(t => t !== task);
         setTaskList(newTaskList);
@@ -98,11 +108,11 @@ function App() {
                         });
                 }}
                 onDeleteTask={task => {
-                    removeTaskFromList(task);
-                    setEditingNewTask(false);
-
-                    // todo: call server
-
+                    deleteTaskData(task)
+                        .then(() => {
+                            removeTaskFromList(task);
+                            setEditingNewTask(false);
+                        });
                 }}
                 onCancelTask={(task) => {
                     setEditingIndex(-1);

@@ -18,7 +18,9 @@ function ReadOnlyTaskEntry({ task,
                 }} >Edit</button>
                 <button
                     onClick={() => {
-                    onDelete(task)
+                        if (confirm(`Delete task "${task.name}"?`)) {
+                            onDelete(task)
+                        }
                     }}>Delete</button>
             </>)}
         </div>
