@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/TaskTrackerApp.Server/tasktracker.db-wal
+/package-lock.json

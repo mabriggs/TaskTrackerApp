@@ -78,7 +78,7 @@ function App() {
     }
 
     return (
-        <div>
+        <div className="w-full">
             <button
                 onClick={() => {
                     const task = {
@@ -94,7 +94,8 @@ function App() {
                 disabled={editingIndex >= 0}
             >Add</button>
 
-            <TaskList tasks={taskList}
+            <TaskList
+                tasks={taskList}
                 onUpdateTask={(updatedTask, index) => {
                     const getTaskFunc = editingNewTask ? createTaskData : updateTaskData;
                     
