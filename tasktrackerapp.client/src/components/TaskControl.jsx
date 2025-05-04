@@ -1,5 +1,5 @@
-import React from 'react';
-import { PencilIcon, TrashIcon, HandThumbDownIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
+import { useState, useRef } from 'react';
+import { PlusIcon, PencilIcon, TrashIcon, HandThumbDownIcon, HandThumbUpIcon } from "@heroicons/react/24/outline";
 
 function ReadOnlyTaskEntry({ task, onEdit, onDelete, allowEditing }) {
     return (
@@ -32,8 +32,8 @@ function ReadOnlyTaskEntry({ task, onEdit, onDelete, allowEditing }) {
 }
 
 function EditingTaskEntry({ task, onSaveTask, onCancel }) {
-    const [changeMade, setChangeMade] = React.useState(false);
-    const formRef = React.useRef();
+    const [changeMade, setChangeMade] = useState(false);
+    const formRef = useRef();
 
     function getTaskFromFormData(formData) {
         const rawDate = new Date(formData.get('DueDate'));
@@ -115,41 +115,126 @@ function EditingTaskEntry({ task, onSaveTask, onCancel }) {
     );
 }
 
-export default function TaskList({
+function TaskList({
     tasks,
     onUpdateTask,
     onDeleteTask,
     onCancelTask,
     editingIndex,
     setEditingIndex,
+    reverseDirection=false
 }) {
+    const taskList = tasks.map((task, i) =>
+        editingIndex === i ? (
+            <EditingTaskEntry
+                key={task.id}
+                task={task}
+                submitText="Save"
+                onSaveTask={(updatedTask) => {
+                    onUpdateTask(updatedTask, i);
+                    setEditingIndex(-1);
+                }}
+                onCancel={onCancelTask}
+            />
+        ) : (
+            <ReadOnlyTaskEntry
+                key={task.id}
+                task={task}
+                onEdit={() => setEditingIndex(i)}
+                onDelete={() => {
+                    onDeleteTask(task);
+                    setEditingIndex(-1);
+                }}
+                allowEditing={editingIndex === -1}
+            />
+        ));
+
+    if (reverseDirection) {
+        taskList.reverse()
+    }
+
     return (
         <div className="w-full">
-            {tasks.map((task, i) =>
-                editingIndex === i ? (
-                    <EditingTaskEntry
-                        key={task.id}
-                        task={task}
-                        submitText="Save"
-                        onSaveTask={(updatedTask) => {
-                            onUpdateTask(updatedTask, i);
-                            setEditingIndex(-1);
-                        }}
-                        onCancel={onCancelTask}
-                    />
-                ) : (
-                    <ReadOnlyTaskEntry
-                        key={task.id}
-                        task={task}
-                        onEdit={() => setEditingIndex(i)}
-                        onDelete={() => {
-                            onDeleteTask(task);
-                            setEditingIndex(-1);
-                        }}
-                        allowEditing={editingIndex === -1}
-                    />
-                )
-            )}
+            {taskList}
         </div>
     );
+}
+
+export default function TaskControl({
+    taskList,
+    setTaskList,
+    createTaskData,
+    updateTaskData,
+    deleteTaskData }) {
+    
+    const [editingIndex, setEditingIndex] = useState(-1);
+    const [editingNewTask, setEditingNewTask] = useState(false);
+
+    function HeaderRow() {
+        return (
+            <div className="flex flex-row w-full px-4 py-2 my-2 rounded-xl outline outline-1 outline-gray-600 items-center gap-4 overflow-x-auto whitespace-nowrap">
+                <div className="basis-1/2 text-left truncate">Name</div>
+                <div className="basis-1/6">Status</div>
+                <div className="basis-1/6">Due Date</div>
+
+                <button
+                    onClick={() => {
+                        const task = {
+                            id: 0,
+                            name: "",
+                            status: "NotStarted",
+                            dueDate: new Date()
+                        };
+                        setTaskList(taskList.concat(task));
+                        setEditingIndex(taskList.length); // no -1, accounting for new task
+                        setEditingNewTask(true);
+                    }}
+                    className="outline px-3 py-1 rounded hover:bg-gray-100 float-right"
+                    disabled={editingIndex >= 0}>
+                    <PlusIcon className="h-5 w-5" />
+                </button>
+            </div>);
+    }
+
+    function removeTaskFromList(task) {
+        const newTaskList = taskList.filter(t => t !== task);
+        setTaskList(newTaskList);
+    }
+
+    return (<>
+        <h1>TODO LIST</h1>
+        <HeaderRow />
+        <TaskList
+            tasks={taskList}
+            onUpdateTask={(updatedTask, index) => {
+                const getTaskFunc = editingNewTask ? createTaskData : updateTaskData;
+
+                getTaskFunc(updatedTask)
+                    .then(resultTask => {
+                        setTaskList(taskList.map((task, i) => {
+                            if (i === index) return resultTask
+                            else return task;
+                        }));
+                        setEditingNewTask(false);
+                    });
+            }}
+            onDeleteTask={task => {
+                deleteTaskData(task)
+                    .then(() => {
+                        removeTaskFromList(task);
+                        setEditingNewTask(false);
+                    });
+            }}
+            onCancelTask={(task) => {
+                setEditingIndex(-1);
+                if (editingNewTask) {
+                    removeTaskFromList(task);
+                    setEditingNewTask(false);
+                }
+            }}
+            editingIndex={editingIndex}
+            setEditingIndex={setEditingIndex}
+            reverseDirection={true}
+        />
+    </>);
 }
