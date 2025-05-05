@@ -363,3 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 /TaskTrackerApp.Server/tasktracker.db-wal
 /package-lock.json
+/TaskTrackerApp.Server/tasktracker.db
+/TaskTrackerApp.Server/tasktracker.db-shm

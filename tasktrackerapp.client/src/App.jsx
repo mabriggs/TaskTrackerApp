@@ -7,21 +7,21 @@ import Login from './Login';
 
 function RequireAuth({ children }) {
     const token = authService.getToken();
-
-    if (!token) {
-        return <Navigate to="/account/login" />;
-    }
-
+    if (!token) return <Navigate to="/account/login" />;
     return children;
-};
+}
 
 function App() {
     const [taskList, setTaskList] = useState([]);
-    //let taskList;
-    
+    const [isLoggedIn, setIsLoggedIn] = useState(authService.getToken() != null);
+
     useEffect(() => {
-        getTaskData().then(data => { setTaskList(data) });
-    }, []);
+        if (isLoggedIn) {
+            getAllTaskData().then(data => {
+                if (data) setTaskList(data);
+            });
+        }
+    }, [isLoggedIn]);
 
     function convertServerTaskData(data) {
         return {
@@ -30,10 +30,9 @@ function App() {
         };
     }
 
-    async function getTaskData() {
+    async function getAllTaskData() {
         const response = await authService.fetch('/api/Task/GetAll');
         if (response.ok) {
-            console.log("popTaskData", response);
             const data = await response.json();
             return data;
         } else {
@@ -44,15 +43,12 @@ function App() {
     async function createTaskData(task) {
         const response = await authService.fetch('/api/Task/Create', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(task)
         });
         if (response.ok) {
             const newTask = await response.json();
-            const convTask = convertServerTaskData(newTask);
-            return convTask;
+            return convertServerTaskData(newTask);
         } else {
             console.error('Failed to save task data');
         }
@@ -61,9 +57,7 @@ function App() {
     async function updateTaskData(task) {
         const response = await authService.fetch('/api/Task/Update', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(task)
         });
         if (response.ok) {
@@ -79,7 +73,6 @@ function App() {
             method: "PUT"
         });
         if (!response.ok) {
-            // todo: also check response result
             console.error('Failed to delete task data');
         }
     }
@@ -91,22 +84,41 @@ function App() {
                     <Route path="/"
                         element={
                             <RequireAuth>
-                                <TaskControl
-                                    taskList={taskList}
-                                    setTaskList={setTaskList}
-                                    createTaskData={createTaskData}
-                                    updateTaskData={updateTaskData}
-                                    deleteTaskData={deleteTaskData}
-                                />
+                                <div className="text-left">
+                                    <button
+                                        onClick={() => {
+                                            if (confirm("Return to login screen?")) {
+                                                authService.logout();
+                                                setIsLoggedIn(false);
+                                                window.location.href = "/account/login";
+                                            }
+                                        }}
+                                        className="outline-1 text-gray-400 font-bold rounded-xl px-4 py-2 hover:bg-gray-400 hover:text-gray-900"
+                                    >
+                                        Logout
+                                    </button>
+                                </div>
+
+                                <div className="text-3xl">Task List</div>
+                                {taskList ? (
+                                    <TaskControl
+                                        taskList={taskList}
+                                        setTaskList={setTaskList}
+                                        createTaskData={createTaskData}
+                                        updateTaskData={updateTaskData}
+                                        deleteTaskData={deleteTaskData}
+                                    />
+                                ) : (
+                                    <p>Attempting to fetch tasks...</p>
+                                )}
                             </RequireAuth>
                         } />
                     <Route path="/account/login"
-                        element={<Login />} />
-    {/*                <Route path="*" element={<Navigate to="/" replace />} />*/}
+                        element={<Login onLogin={() => setIsLoggedIn(true)} />} />
                 </Routes>
             </div>
-        </Router>);
-    
+        </Router>
+    );
 }
 
 export default App;
