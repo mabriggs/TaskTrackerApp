@@ -12,8 +12,5 @@ namespace TaskTrackerApp.Server.Data
 
         // Define your DbSets here
         public DbSet<TaskModel> Tasks { get; set; }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder options)
-            => options.UseSqlite("Data Source=tasktracker.db");
     }
 }

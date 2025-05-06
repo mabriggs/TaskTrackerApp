@@ -1,12 +1,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using TaskTrackerApp.Server;
 using TaskTrackerApp.Server.Data;
 using TaskTrackerApp.Server.Services;
+using TaskTrackerApp.Server.Shared;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-        options.JsonSerializerOptions.Converters.Add(new CustomDateTimeConverter());
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.WriteIndented = true;
+        JsonDefaults.SetJsonSerializerOptions(options.JsonSerializerOptions);
     });
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
@@ -36,7 +32,8 @@ builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddDbContext<AppDbContext>();
+builder.Services.AddDbContext<AppDbContext>(options =>
+options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 //builder.Services.AddSingleton<ITaskManager, TaskManagerMock>();
 builder.Services.AddScoped<ITaskManager, TaskManagerDb>();
 builder.Services.AddScoped<UserManager<IdentityUser>>();
@@ -96,3 +93,5 @@ app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
 app.Run();
+
+public partial class Program { }
