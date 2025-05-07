@@ -5,7 +5,7 @@ WORKDIR /app
 # Copy sln and csproj files
 COPY *.sln .
 COPY TaskTrackerApp.Server/*.csproj TaskTrackerApp.Server/
-COPY TaskTrackerApp.Client/*.csproj TaskTrackerApp.Client/
+COPY tasktrackerapp.client/*.csproj tasktrackerapp.client/
 RUN dotnet restore
 
 # Copy the entire source and build
