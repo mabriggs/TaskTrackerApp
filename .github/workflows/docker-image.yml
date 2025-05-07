@@ -40,10 +40,12 @@ jobs:
     - name: Publish .NET project
       run: dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release -o out
 
-    - name: Build Docker image
-      run: docker build -t my-app-image ./out
+    - name: Log in to Railway
+        run: |
+          npm install -g railway
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
 
-    # Optional: Push to Railway or Docker Hub etc
-    # - name: Push image to registry
-    #   run: docker push <your-registry>/<your-image>:tag
+      - name: Deploy to Railway
+        run: |
+          railway up --service task-tracker --root ./publish
 
