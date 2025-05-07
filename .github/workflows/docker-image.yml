@@ -41,11 +41,11 @@ jobs:
       run: dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release -o out
 
     - name: Log in to Railway
-        run: |
+      run: |
           npm install -g railway
           railway login --token ${{ secrets.RAILWAY_TOKEN }}
 
-      - name: Deploy to Railway
-        run: |
-          railway up --service task-tracker --root ./publish
+    - name: Deploy to Railway
+      run: |
+        railway up --service task-tracker --root ./publish
 
