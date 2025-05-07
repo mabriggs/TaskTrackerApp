@@ -1,0 +1,51 @@
+name: Build and Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      DOTNET_VERSION: '8.0.x'
+      NODE_VERSION: '20' # Or whatever you're using
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install and build React app
+      working-directory: ./tasktrackerapp.client
+      run: |
+        npm ci
+        npm run build
+
+    - name: Copy built files to wwwroot
+      run: |
+        rm -rf TaskTrackerApp.Server/wwwroot/*
+        cp -r tasktrackerapp.client/dist/* TaskTrackerApp.Server/wwwroot/
+
+    - name: Publish .NET project
+      run: dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release -o out
+
+    - name: Log in to Railway
+        run: |
+          npm install -g railway
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Deploy to Railway
+        run: |
+          railway up --service task-tracker --root ./publish
+
