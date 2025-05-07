@@ -1,24 +1,19 @@
-# Build stage
+# Stage 1: Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
-# Copy sln and csproj files
-COPY *.sln .
-COPY TaskTrackerApp.Server/*.csproj TaskTrackerApp.Server/
-COPY tasktrackerapp.client/*.csproj tasktrackerapp.client/
-RUN dotnet restore
+# Copy everything
+COPY . ./
 
-# Copy the entire source and build
-COPY . .
-WORKDIR /app/TaskTrackerApp.Server
-RUN dotnet publish -c Release -o out
+# Restore and publish
+RUN dotnet restore TaskTrackerApp.Server/TaskTrackerApp.Server.csproj
+RUN dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release -o /app/out
 
-# Runtime stage
+# Stage 2: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-COPY --from=build /app/TaskTrackerApp.Server/out ./
+COPY --from=build /app/out ./
 
-# Configure port and entrypoint
-ENV ASPNETCORE_URLS=http://+:8080
+# Expose port (adjust if needed)
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "TaskTrackerApp.Server.dll"]
