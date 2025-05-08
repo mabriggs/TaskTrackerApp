@@ -47,5 +47,5 @@ jobs:
 
     - name: Deploy to Railway
       run: |
-        railway up --service task-tracker --root ./publish
+        railway up --service task-tracker --root ./out
 
