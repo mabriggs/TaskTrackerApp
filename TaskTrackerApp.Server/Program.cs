@@ -51,9 +51,19 @@ builder.Services.AddScoped<UserManager<IdentityUser>>();
 
 // Configure JWT authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var jwtKey = builder.Environment.IsDevelopment()
-    ? jwtSettings["Key"]
-    : Environment.GetEnvironmentVariable("JWT_KEY");
+string jwtKey;
+if (builder.Environment.IsDevelopment())
+{
+    jwtKey = jwtSettings["Key"];
+    Console.WriteLine("Dev mode: using JWT key from appSettings.json");
+}
+else
+{
+    jwtKey = Environment.GetEnvironmentVariable("JWT_KEY");
+    Console.WriteLine("Prod mode: using JWT key from environment variable");
+}
+
+
 builder.Services.Configure<JwtSettings>(options =>
 {
     builder.Configuration.GetSection("JwtSettings").Bind(options);
