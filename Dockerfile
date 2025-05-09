@@ -18,6 +18,7 @@ RUN dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 ARG ASPNETCORE_URLS
 ARG JWT_KEY
+ENV JWT_KEY=${JWT_KEY}
 ENV ASPNETCORE_ENVIRONMENT=Production
 WORKDIR /app
 COPY --from=server-builder /app/out ./
