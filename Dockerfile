@@ -1,14 +1,9 @@
-# Stage 1: Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+# Stage 1: Runtime only (build happens in GitHub Action)
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Copy everything
-COPY . ./
+# Copy pre-built app files from GitHub Action (these come from ./out)
+COPY ./out/ ./
 
-# Stage 2: Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
-
-
-# Expose port (adjust if needed)
 EXPOSE 8080
 ENTRYPOINT ["dotnet", "TaskTrackerApp.Server.dll"]
