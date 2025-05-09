@@ -16,6 +16,7 @@ RUN dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release
 
 # STAGE 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+ENV ASPNETCORE_ENVIRONMENT=Production
 WORKDIR /app
 COPY --from=server-builder /app/out ./
 COPY --from=client-builder /app/client/dist ./wwwroot
