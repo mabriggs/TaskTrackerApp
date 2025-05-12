@@ -1,24 +1,26 @@
-# Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /app
+# STAGE 1: Build the client
+FROM node:20 AS client-builder
+WORKDIR /app/client
+COPY tasktrackerapp.client/ .
+RUN npm install && npm run build
 
-# Copy sln and csproj files
-COPY *.sln .
+# STAGE 2: Build the server
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS server-builder
+WORKDIR /app
 COPY TaskTrackerApp.Server/*.csproj TaskTrackerApp.Server/
-COPY TaskTrackerApp.Client/*.csproj TaskTrackerApp.Client/
-RUN dotnet restore
+RUN dotnet restore TaskTrackerApp.Server/TaskTrackerApp.Server.csproj
 
-# Copy the entire source and build
+# Copy everything now that restore is done
 COPY . .
-WORKDIR /app/TaskTrackerApp.Server
-RUN dotnet publish -c Release -o out
+RUN dotnet publish TaskTrackerApp.Server/TaskTrackerApp.Server.csproj -c Release -o /app/out
 
-# Runtime stage
+# STAGE 3: Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+ENV ASPNETCORE_ENVIRONMENT=Production
 WORKDIR /app
-COPY --from=build /app/TaskTrackerApp.Server/out ./
+COPY --from=server-builder /app/out ./
+COPY --from=client-builder /app/client/dist ./wwwroot
 
-# Configure port and entrypoint
-ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+RUN printenv > /tmp/env.dump
 ENTRYPOINT ["dotnet", "TaskTrackerApp.Server.dll"]

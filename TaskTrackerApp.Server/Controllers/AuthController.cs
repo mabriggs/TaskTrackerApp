@@ -1,26 +1,20 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using TaskTrackerApp.Server;
 
 namespace ReactApp.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController(IOptions<JwtSettings> jwtOptions,
+    UserManager<IdentityUser> userManager) : ControllerBase
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly IConfiguration _configuration;
-
-    public AuthController(UserManager<IdentityUser> userManager, IConfiguration configuration)
-    {
-        _userManager = userManager;
-        _configuration = configuration;
-    }
-
     public class LoginRequest
     {
         public required string Username { get; set; }
@@ -37,13 +31,13 @@ public class AuthController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        var user = await _userManager.FindByNameAsync(request.Username);
+        var user = await userManager.FindByNameAsync(request.Username);
         if (user == null)
         {
             return Unauthorized(new { message = "Invalid username or password" });
         }
 
-        var result = await _userManager.CheckPasswordAsync(user, request.Password);
+        var result = await userManager.CheckPasswordAsync(user, request.Password);
         if (!result)
         {
             return Unauthorized(new { message = "Invalid username or password" });
@@ -71,7 +65,7 @@ public class AuthController : ControllerBase
             UserName = request.Username
         };
 
-        var result = await _userManager.CreateAsync(user, request.Password);
+        var result = await userManager.CreateAsync(user, request.Password);
 
         if (!result.Succeeded)
         {
@@ -93,7 +87,7 @@ public class AuthController : ControllerBase
 
     private async Task<string> GenerateJwtToken(IdentityUser user)
     {
-        var roles = await _userManager.GetRolesAsync(user);
+        var roles = await userManager.GetRolesAsync(user);
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -102,14 +96,14 @@ public class AuthController : ControllerBase
 
         claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:Key"]));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Value.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["JwtSettings:Issuer"],
-            audience: _configuration["JwtSettings:Audience"],
+            issuer: jwtOptions.Value.Issuer,
+            audience: jwtOptions.Value.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(_configuration["JwtSettings:DurationInMinutes"])),
+            expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtOptions.Value.DurationInMinutes)),
             signingCredentials: credentials
         );
 
